@@ -13,9 +13,9 @@ module.exports = class MessageRelay {
   }
 
   routeMessage(data, source) {
-    if (!data || !data.type) {
-      return;
-    }
+    // if (!data || !data.type) {
+    //   return;
+    // }
 
     const socket = this.addressToSockets[data.peerAddress];
 

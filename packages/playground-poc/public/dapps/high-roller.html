@@ -1,31 +1,22 @@
 <h1>High Roller</h1>
-<button id="send-message">Play with someone</button>
+<div id="splash-screen">
+  <button id="send-message">Play with someone</button>
+</div>
+<div id="game-screen" style="display: none">
+  <button id="propose-acceptable-state">Propose acceptable state</button>
+  <button id="propose-rejectable-state">Propose rejectable state</button>
+  <p><label id="status"></label></p>
+</div>
 <script src="https://unpkg.com/eventemitter3@latest/umd/eventemitter3.min.js"></script>
 <script src="/scripts/mini-cf.js"></script>
 <script>
-  // NO SOCKETS HERE!
   (async () => {
     const nodeProvider = new NodeProvider();
     await nodeProvider.connect();
 
     const client = new cf.Client(nodeProvider);
 
-    // client.on('proposeInstall', (data) => {
-      // console.log('proposeInstall');
-    // });
-    // client.on('install', function () {});
-    // client.on('rejectInstall', function (data) {
-      // nodeProvider.emit('rejectedInstall', { peerAddress: data.fromAddress });
-    // });
-    client.once('install', () => {
-      document.getElementById('send-message').style.display = 'none';
-      document.write('<h1>Installed High Roller!</h1>');
-    });
-
     const manifest = {
-      // AppDefinition goes here...
-      // TODO: Where does this info go? How deep in the communication flow they travel?
-      // TODO: Should add all the manifest properties. How to load the manifest? Build process?
       name: 'High Roller',
       version: '0.0.1',
       url: 'dapps/high-roller.html',
@@ -34,15 +25,10 @@
 
     const appFactory = client.createAppFactory(manifest);
 
-    // Wallet broadcasts through the Node, tells the world
-    // "HEY! someone's installing something", via Firebase.
-    // It should fall under Hub's responsability.
-
-    // When we send proposeInstall, we talk to the Hub.
-    // The Hub will route the message for us.
-
     var ui = {
-      sendMessage: document.getElementById('send-message')
+      sendMessage: document.getElementById('send-message'),
+      proposeAcceptableState: document.getElementById('propose-acceptable-state'),
+      proposeRejectableState: document.getElementById('propose-rejectable-state'),
     };
 
     ui.sendMessage.addEventListener('click', function () {
@@ -52,6 +38,37 @@
           // Terms goes here...
         });
       });
+    });
+
+    client.once('install', (appInstance) => {
+      // Move all this.
+      document.getElementById('send-message').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'block';
+
+      ui.proposeAcceptableState.addEventListener('click', () => {
+        appInstance.proposeState({ move: 'forward' });
+      });
+
+      ui.proposeRejectableState.addEventListener('click', () => {
+        appInstance.proposeState({ move: 'backward' });
+      });
+    });
+
+    client.on('proposeState', (appInstance, oldState, newState) => {
+      const state = JSON.parse(newState);
+      if (state.move === 'forward') {
+        appInstance.acceptState(state);
+      } else {
+        appInstance.rejectState(state);
+      }
+    });
+
+    client.on('acceptState', (appInstance) => {
+      document.getElementById('status').innerText = `${appInstance.peerAddress} accepted your state`;
+    });
+
+    client.on('rejectState', (appInstance) => {
+      document.getElementById('status').innerText = `${appInstance.peerAddress} rejected your state`;
     });
   })();
 </script>

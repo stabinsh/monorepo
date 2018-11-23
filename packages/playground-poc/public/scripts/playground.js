@@ -1,8 +1,9 @@
 class Dapp {
-  constructor(manifest, socket) {
+  constructor(manifest, eventEmitter, userAddress) {
     this.manifest = manifest;
-    this.socket = socket;
+    this.eventEmitter = eventEmitter;
     this.ready = false;
+    this.userAddress = userAddress;
 
     /**
      * @type {Window}
@@ -15,6 +16,9 @@ class Dapp {
     this.port = null;
 
     this.messageQueue = [];
+
+    this.eventEmitter.on('message', (message) => this.port.postMessage(message));
+    this.relayIdentity();
   }
 
   queueMessage(message) {
@@ -46,21 +50,66 @@ class Dapp {
     const channel = new MessageChannel();
 
     this.port = channel.port1;
-    this.port.addEventListener('message', this.relayMessageToSocket.bind(this));
+    this.port.addEventListener('message', this.relayMessage.bind(this));
     this.port.start();
 
     return channel;
   }
 
-  relayMessageToSocket(event) {
-    this.socket.emit('message', event.data);
+  relayMessage(event) {
+    this.eventEmitter.emit('message', event.data);
+  }
+
+  relayIdentity() {
+    this.eventEmitter.emit('identity', { address: this.userAddress });
+  }
+
+  reply(originalMessage, data = {}) {
+    const message = Object.assign({}, originalMessage, data);
+
+    message.peerAddress = originalMessage.fromAddress;
+    delete message.fromAddress;
+
+    this.eventEmitter.emit('message', message);
+  }
+}
+
+class MessagingService {
+  constructor() {
+    this.eventEmitter = new EventEmitter3.EventEmitter();
+  }
+
+  on(eventName, callback) {
+    this.eventEmitter.on(eventName, callback);
+  }
+
+  once(eventName, callback) {
+    this.eventEmitter.once(eventName, callback);
+  }
+}
+
+class SocketMessagingService extends MessagingService {
+  constructor(url) {
+    super();
+    this.socket = io.connect(url);
+
+    this.socket.on('message', (eventData) => {
+      this.eventEmitter.emit('message', eventData);
+    });
+
+    this.socket.on('connect', (eventData) => {
+      this.eventEmitter.emit('connect', eventData);
+    });
+  }
+
+  emit(eventType, data) {
+    this.socket.emit(eventType, data);
   }
 }
 
 class Playground {
   constructor(appManifests) {
     this.iframes = {};
-    this.socket = null;
     this.user = null;
     this.appManifests = appManifests;
   }
@@ -75,65 +124,40 @@ class Playground {
     });
   }
 
-  setSocket(address) {
-    this.socket = io.connect('http://localhost:8080');
-    this.socket.on('connect', this.relayIdentity.bind(this, address));
+  connectAs(address) {
+    this.node = new Node(new SocketMessagingService('http://localhost:8080'), address);
     this.user = address;
-    this.socket.on('message', this.passMessageToDapp.bind(this));
+
     document.getElementById('current-user').innerText = address;
+
+    this.bindEvents();
   }
 
-  relayIdentity(address) {
-    this.socket.emit('identity', { address });
-  }
-
-  reply(originalMessage, data = {}) {
-    const message = Object.assign({}, originalMessage, data);
-
-    message.peerAddress = originalMessage.fromAddress;
-    delete message.fromAddress;
-
-    this.socket.emit('message', message);
-  }
-
-  // TODO: proposeInstalL/rejectInstall require special handling that
-  // can occur while the other party's dApp is closed. Who's responsible
-  // for these events?
-  passMessageToDapp(data) {
-    if (data.type === 'proposeInstall' && data.peerAddress === this.user) { // This goes to a Node
-      // The callback is Playground's.
+  bindEvents() {
+    this.node.on('proposeInstall', (data) => {
       vex.dialog.confirm({
         message: `Do you want to install ${data.appDefinition.name}?`,
         callback: (value) => {
           if (value) {
-            this.reply(data, { type: 'install' });
-            this.socket.emit('message', Object.assign({}, data, { type: 'install' }));
+            const dapp = this.loadApp(data.appDefinition, document.body);
+            dapp.reply(data, { type: 'install' });
           } else {
-            this.reply(data, { type: 'rejectInstall' });
+            const rejectMessage = {
+              ...data,
+              peerAddress: data.fromAddress,
+              type: 'rejectInstall',
+            };
+
+            delete rejectMessage.fromAddress;
+            this.node.messagingService.emit('message', rejectMessage);
           }
         }
       });
-      // return; // TODO: Is it OK to *not* pass through the message?
-    }
+    });
 
-    if (data.type === 'install') {
-      this.loadApp(data.appDefinition, document.body);
-    }
-
-    if (data.type === 'rejectInstall') { // This goes to a Node
-      // The callback is Playground's.
+    this.node.on('rejectInstall', (data) => {
       vex.dialog.alert(`${data.fromAddress} rejected your install proposal.`);
-      return; // TODO: Is it OK to *not* pass through the message?
-    }
-
-    // Playground relays to the proper iframe.
-    const address = data.appDefinition.address;
-    const dapp = this.iframes[address];
-    if (this.isAppLoading(address)) {
-      dapp.queueMessage(data);
-    } else if (this.isAppLoaded(address)) {
-      dapp.port.postMessage(data);
-    }
+    });
   }
 
   /**
@@ -141,8 +165,8 @@ class Playground {
    * @param {Element} parentNode
    */
   loadApp(manifest, parentNode) {
-    if (this.isAppLoaded(manifest.address) || this.isAppLoading(manifest.address)) {
-      return;
+    if (this.iframes[manifest.address]) {
+      return this.iframes[manifest.address];
     }
 
     const iframe = document.createElement('iframe');
@@ -152,19 +176,12 @@ class Playground {
 
     parentNode.appendChild(iframe);
 
-    const dapp = new Dapp(manifest, this.socket);
+    const appEventEmitter = this.node.openApp(manifest.address, this.user);
+    const dapp = new Dapp(manifest, appEventEmitter, this.user);
     dapp.bindToWindow(iframe.contentWindow);
 
     this.iframes[iframe.id] = dapp;
-  }
 
-  isAppLoaded(address) {
-    const app = this.iframes[address];
-    return app && app.ready;
-  }
-
-  isAppLoading(address) {
-    const app = this.iframes[address];
-    return app && !app.ready;
+    return dapp;
   }
 }
