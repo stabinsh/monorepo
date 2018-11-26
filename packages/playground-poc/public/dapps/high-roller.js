@@ -1,6 +1,6 @@
 // NO SOCKETS HERE!
 (async () => {
-  const nodeProvider = new NodeProvider();
+  const nodeProvider = new cfNodeProvider.NodeProvider();
   await nodeProvider.connect();
 
   const client = new cf.Client(nodeProvider);

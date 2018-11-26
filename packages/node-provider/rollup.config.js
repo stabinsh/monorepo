@@ -12,7 +12,7 @@ export default [
       },
       {
         file: pkg.iife,
-        name: "nodeProvider",
+        name: "cfNodeProvider",
         format: "iife"
       }
     ],

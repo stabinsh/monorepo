@@ -38,13 +38,11 @@ class Client extends EventEmitter3.EventEmitter {
      */
     this.nodeProvider = nodeProvider;
 
-    const messages = [
+    [
       'proposeInstall',
       'rejectInstall',
       'install',
-    ];
-
-    messages.forEach(this.bindMessage.bind(this));
+    ].forEach(this.bindMessage.bind(this));
   }
 
   bindMessage(message) {
