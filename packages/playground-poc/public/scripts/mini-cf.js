@@ -34,29 +34,23 @@ class AppFactory {
 
   proposeInstall(peerAddress, terms) {
     this.client.nodeProvider.emit('proposeInstall', {
-      // TODO: Better define this payload.
       peerAddress,
       terms,
       appDefinition: this.appDefinition
-      // appID: this.appDefinition.address
     });
   }
 
-  // TODO: Why "rejectInstall" isn't defined here in the API reference?
   rejectInstall(peerAddress, terms) {
     this.client.nodeProvider.emit('rejectInstall', {
       peerAddress,
       terms,
       appDefinition: this.appDefinition
-      // TODO: Should we use this here too?
-      // appID: this.appDefinition.address
     });
   }
 }
 
 class AppInstance {
   constructor(installData) {
-    // see https://gist.github.com/kaizhu256/4482069
     this.id = uuid();
     this.eventEmitter = new EventEmitter3.EventEmitter();
 
@@ -186,6 +180,7 @@ class NodeProvider {
           });
           this.messagePort.start();
           window.postMessage('cf-node-provider:ready');
+          this.emit('ready');
           resolve(this);
         }
       });

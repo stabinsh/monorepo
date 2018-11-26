@@ -17,7 +17,7 @@ module.exports = class MessageRelay {
     //   return;
     // }
 
-    const socket = this.addressToSockets[data.peerAddress];
+    const socket = this.addressToSockets[data.peerAddress || data.toAddress];
 
     // TODO: Is it OK to auto-attach a "fromAddress"?
     // Should we consider another way for peers to talk to each other?
@@ -35,7 +35,7 @@ module.exports = class MessageRelay {
     console.log('----------------------------------------------------------------------------');
 
     if (socket) {
-      console.log('Sending via socket', socket.id, ' to ', data.peerAddress, ' a message: ', data);
+      console.log('Sending via socket', socket.id, ' to ', (data.peerAddress || data.toAddress), ' a message: ', data);
     } else {
       console.log('Broadcasting: ', data);
     }
