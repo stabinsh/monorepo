@@ -1,6 +1,7 @@
 export interface IMessagingService {
-  emit(eventName: string, data: any);
   on(eventName: string, callback: Function);
+  once(eventName: string, callback: Function);
+  emit(eventName: string, data: any);
 }
 
 export interface IStore {
