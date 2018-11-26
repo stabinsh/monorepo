@@ -1,0 +1,23 @@
+{
+  "name": "@counterfactual/node-poc",
+  "version": "1.0.0",
+  "main": "dist/node-poc.js",
+  "module": "dist/node-poc.es.js",
+  "iife": "dist/node-poc.iife.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b && rollup -c"
+  },
+  "dependencies": {
+    "@counterfactual/cf.js": "*",
+    "@counterfactual/machine": "*",
+    "ethers": "^4.0.13",
+    "eventemitter3": "^3.1.0"
+  },
+  "devDependencies": {
+    "rollup": "^0.67.3",
+    "rollup-plugin-typescript2": "^0.18.0",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
+  }
+}
