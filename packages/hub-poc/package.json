@@ -1,0 +1,25 @@
+{
+  "name": "@counterfactual/hub-poc",
+  "version": "1.0.0",
+  "main": "dist/hub-poc.js",
+  "module": "dist/hub-poc.es.js",
+  "iife": "dist/hub-poc.iife.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b && rollup -c",
+    "start": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@counterfactual/node-poc": "*",
+    "eventemitter3": "^3.1.0",
+    "socket.io-client": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/socket.io-client": "^1.4.32",
+    "rollup": "^0.67.3",
+    "rollup-plugin-typescript2": "^0.18.0",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
+  }
+}
