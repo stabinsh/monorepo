@@ -139,8 +139,10 @@ export class NextMsgGenerator {
       action: lastMsg.action,
       data: lastMsg.data,
       multisigAddress: lastMsg.multisigAddress,
-      toAddress: lastMsg.fromAddress, // swap to/from here since sending to peer
-      fromAddress: lastMsg.toAddress,
+      // toAddress: lastMsg.fromAddress, // swap to/from here since sending to peer
+      // fromAddress: lastMsg.toAddress,
+      fromAddress: lastMsg.fromAddress,
+      toAddress: lastMsg.toAddress,
       seq: lastMsg.seq + 1
     };
     return msg;

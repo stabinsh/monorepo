@@ -8,6 +8,10 @@ const node = new Node(
   localAddress
 );
 
+node.on("machine:io", data => {
+  console.log(data);
+});
+
 // Is setup akin to ProposeInstall?
 node.on("proposeInstall", data => {
   // We're mirroring the counterparty's deposit.

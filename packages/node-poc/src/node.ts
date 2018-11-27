@@ -25,6 +25,12 @@ export default class Node {
 
     this.messagingService.emit("identity", { address: userAddress });
 
+    this.messagingService.on("message", data => {
+      if (data.type === "machine:io") {
+        this.instructionExecutor.receiveClientActionMessageAck(data);
+      }
+    });
+
     // Machine setup begins here.
 
     // A mapping of requsts that are coming into the response sink.

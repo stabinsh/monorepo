@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -b && rollup -c",
-    "start": "ts-node src/index.ts"
+    "start": "node -r ts-node/register src/index.ts",
+    "start:debug": "node --inspect -r ts-node/register src/index.ts"
   },
   "dependencies": {
     "@counterfactual/node-poc": "*",
