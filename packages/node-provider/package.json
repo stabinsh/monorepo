@@ -19,7 +19,7 @@
   "devDependencies": {
     "@counterfactual/cf.js": "0.0.1",
     "@types/jest": "^23.3.3",
-    "@types/node": "^10.9.3",
+    "@types/node": "^10.12.12",
     "jest": "^23.6.0",
     "rollup": "^0.67.3",
     "rollup-plugin-commonjs": "^9.2.0",
