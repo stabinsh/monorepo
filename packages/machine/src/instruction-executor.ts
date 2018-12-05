@@ -2,10 +2,10 @@ import * as cf from "@counterfactual/cf.js";
 import { ethers } from "ethers";
 
 import { ActionExecution } from "./action";
+import { ChannelStates } from "./channel-states";
 import { FLOWS } from "./instructions";
 import { Middleware } from "./middleware/middleware";
 import { ProtocolOperation } from "./middleware/protocol-operation/types";
-import { Node } from "./node";
 import { Opcode } from "./opcodes";
 import { InstructionMiddlewareCallback, StateProposal } from "./types";
 
@@ -30,12 +30,12 @@ export class InstructionExecutor {
    * The underlying state for the entire machine. All state here is a result of
    * a completed and commited protocol.
    */
-  public node: Node;
+  public state: ChannelStates;
 
   constructor(config: InstructionExecutorConfig) {
     this.responseHandler = config.responseHandler;
-    this.node = new Node(config.state || {}, config.network);
-    this.middleware = new Middleware(this.node);
+    this.state = new ChannelStates(config.state || {}, config.network);
+    this.middleware = new Middleware(this.state);
   }
 
   public dispatchReceivedMessage(msg: cf.legacy.node.ClientActionMessage) {
@@ -185,8 +185,8 @@ export class InstructionExecutor {
     this.responseHandler.sendResponse(new cf.legacy.node.Response(status));
   }
 
-  public mutateState(state: cf.legacy.channel.StateChannelInfos) {
-    Object.assign(this.node.channelStates, state);
+  public mutateState(channels: cf.legacy.channel.StateChannelInfos) {
+    Object.assign(this.state.channels, channels);
   }
 
   public register(scope: Opcode, method: InstructionMiddlewareCallback) {

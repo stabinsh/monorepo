@@ -1,32 +1,34 @@
 import * as cf from "@counterfactual/cf.js";
 
 /**
- * Node encapsulates the state of all the channels.
+ * This encapsulates the state of all the channels.
+ * // TODO: This machine will be refactored to be more stateless once
+ * https://github.com/counterfactual/monorepo/pull/163 is merged.
  */
-export class Node {
-  public channelStates: cf.legacy.channel.StateChannelInfos;
+export class ChannelStates {
+  public channels: cf.legacy.channel.StateChannelInfos;
   public networkContext: cf.legacy.network.NetworkContext;
 
   constructor(
     channelStates: cf.legacy.channel.StateChannelInfos,
     network: cf.legacy.network.NetworkContext
   ) {
-    this.channelStates = channelStates;
+    this.channels = channelStates;
     this.networkContext = network;
   }
 
   public stateChannel(
     multisig: cf.legacy.utils.Address
   ): cf.legacy.channel.StateChannelInfo {
-    return this.channelStates[multisig];
+    return this.channels[multisig];
   }
 
   public stateChannelFromMultisigAddress(
     multisigAddress: cf.legacy.utils.Address
   ): cf.legacy.channel.StateChannelInfo {
-    const multisig = this.channelStates[multisigAddress];
+    const multisig = this.channels[multisigAddress];
     if (multisig) {
-      return this.channelStates[multisigAddress];
+      return this.channels[multisigAddress];
     }
     throw Error(`Could not find multisig of address ${multisigAddress}`);
   }
@@ -35,15 +37,15 @@ export class Node {
     multisig: cf.legacy.utils.Address,
     cfAddr: cf.legacy.utils.H256
   ): cf.legacy.app.AppInstanceInfo {
-    return this.channelStates[multisig].appInstances[cfAddr];
+    return this.channels[multisig].appInstances[cfAddr];
   }
 
   public freeBalanceFromMultisigAddress(
     multisigAddress: cf.legacy.utils.Address
   ): cf.legacy.utils.FreeBalance {
-    const multisig = this.channelStates[multisigAddress];
+    const multisig = this.channels[multisigAddress];
     if (multisig) {
-      return this.channelStates[multisigAddress].freeBalance;
+      return this.channels[multisigAddress].freeBalance;
     }
     throw Error(`Could not find multisig of address ${multisigAddress}`);
   }
@@ -53,19 +55,17 @@ export class Node {
    */
   public stateChannelInfosCopy(): cf.legacy.channel.StateChannelInfos {
     return cf.legacy.utils.serializer.deserialize(
-      JSON.parse(JSON.stringify(this.channelStates))
+      JSON.parse(JSON.stringify(this.channels))
     );
   }
 
   public appChannelInfos(): cf.legacy.app.AppInstanceInfos {
     const infos = {};
-    for (const channel of Object.keys(this.channelStates)) {
+    for (const channel of Object.keys(this.channels)) {
       for (const appChannel of Object.keys(
-        this.channelStates[channel].appInstances
+        this.channels[channel].appInstances
       )) {
-        infos[appChannel] = this.channelStates[channel].appInstances[
-          appChannel
-        ];
+        infos[appChannel] = this.channels[channel].appInstances[appChannel];
       }
     }
     return infos;

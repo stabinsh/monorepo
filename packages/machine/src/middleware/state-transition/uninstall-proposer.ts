@@ -1,10 +1,13 @@
 import * as cf from "@counterfactual/cf.js";
 
-import { Node, StateChannelInfoImpl } from "../../node";
+import { ChannelStates, StateChannelInfoImpl } from "../../channel-states";
 import { InternalMessage, StateProposal } from "../../types";
 
 export class UninstallProposer {
-  public static propose(message: InternalMessage, node: Node): StateProposal {
+  public static propose(
+    message: InternalMessage,
+    node: ChannelStates
+  ): StateProposal {
     const multisig: cf.legacy.utils.Address =
       message.clientMessage.multisigAddress;
     const channels = node.stateChannelInfosCopy();

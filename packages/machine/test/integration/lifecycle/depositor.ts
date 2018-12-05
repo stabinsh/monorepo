@@ -1,10 +1,8 @@
 import * as cf from "@counterfactual/cf.js";
-import { TestResponseSink } from "../test-response-sink";
 import { ethers } from "ethers";
-import {
-  UNUSED_FUNDED_ACCOUNT
-} from "../../utils/environment";
 
+import { UNUSED_FUNDED_ACCOUNT } from "../../utils/environment";
+import { TestResponseSink } from "../test-response-sink";
 
 /**
  * A collection of staic methods responsible for "depositing", i.e., running
@@ -70,7 +68,7 @@ export class Depositor {
       peerB.signingKey.address!,
       UNUSED_FUNDED_ACCOUNT,
       msg
-    )
+    );
     expect(response.status).toEqual(cf.legacy.node.ResponseStatus.COMPLETED);
     // since the machine is async, we need to wait for peerB to finish up its
     // side of the protocol before inspecting its state
@@ -124,7 +122,7 @@ export class Depositor {
     amount: ethers.utils.BigNumber
   ) {
     const stateChannel =
-      peerA.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT];
+      peerA.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT];
     expect(stateChannel.me).toEqual(peerA.signingKey.address);
     expect(stateChannel.counterParty).toEqual(peerB.signingKey.address);
 
@@ -163,7 +161,7 @@ export class Depositor {
         new cf.legacy.utils.PeerBalance(peerB.signingKey.address!, 0)
       ],
       cfAddr
-    )
+    );
     expect(response.status).toEqual(cf.legacy.node.ResponseStatus.COMPLETED);
     // validate peerA
     Depositor.validateUninstall(cfAddr, peerA, peerB, amountA, amountB);
@@ -180,7 +178,7 @@ export class Depositor {
   ) {
     // TODO: add nonce and uniqueId params and check them
     // https://github.com/counterfactual/monorepo/issues/111
-    const state = peerA.instructionExecutor.node;
+    const state = peerA.instructionExecutor.state;
     const canon = cf.legacy.utils.PeerBalance.balances(
       peerA.signingKey.address!,
       amountA,
@@ -189,10 +187,10 @@ export class Depositor {
     );
 
     const channel =
-      peerA.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT];
+      peerA.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT];
     const app = channel.appInstances[cfAddr];
 
-    expect(Object.keys(state.channelStates).length).toEqual(1);
+    expect(Object.keys(state.channels).length).toEqual(1);
     expect(channel.me).toEqual(peerA.signingKey.address);
     expect(channel.counterParty).toEqual(peerB.signingKey.address);
     expect(channel.multisigAddress).toEqual(UNUSED_FUNDED_ACCOUNT);

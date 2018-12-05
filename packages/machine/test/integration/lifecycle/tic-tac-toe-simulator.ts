@@ -1,9 +1,7 @@
 import * as cf from "@counterfactual/cf.js";
 import { ethers } from "ethers";
 
-import {
-  UNUSED_FUNDED_ACCOUNT
-} from "../../utils/environment";
+import { UNUSED_FUNDED_ACCOUNT } from "../../utils/environment";
 
 import { TestResponseSink } from "../test-response-sink";
 
@@ -31,7 +29,7 @@ export class TicTacToeSimulator {
       peerB.signingKey.address!,
       UNUSED_FUNDED_ACCOUNT,
       msg
-    )
+    );
     expect(response.status).toEqual(cf.legacy.node.ResponseStatus.COMPLETED);
     return TicTacToeSimulator.validateInstall(peerA, peerB);
   }
@@ -79,7 +77,7 @@ export class TicTacToeSimulator {
   ): Promise<string> {
     await new Promise(resolve => setTimeout(resolve, 50));
     const stateChannel =
-      peerA.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT];
+      peerA.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT];
     const appInstances = stateChannel.appInstances;
     const cfAddrs = Object.keys(appInstances);
     expect(cfAddrs.length).toEqual(1);
@@ -90,12 +88,14 @@ export class TicTacToeSimulator {
     expect(appInstances[cfAddr].peerB.balance.toNumber()).toEqual(2);
 
     TicTacToeSimulator.validateInstallFreeBalance(
-      peerA.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT].freeBalance,
+      peerA.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT]
+        .freeBalance,
       peerA,
       peerB
     );
     TicTacToeSimulator.validateInstallFreeBalance(
-      peerB.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT].freeBalance,
+      peerB.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT]
+        .freeBalance,
       peerA,
       peerB
     );
@@ -153,7 +153,7 @@ export class TicTacToeSimulator {
       cfAddr,
       state,
       ethers.constants.HashZero
-    )
+    );
     expect(response.status).toEqual(cf.legacy.node.ResponseStatus.COMPLETED);
     TicTacToeSimulator.validateMakeMove(
       peerA,
@@ -180,10 +180,10 @@ export class TicTacToeSimulator {
     moveNumber: number
   ) {
     const appA =
-      peerA.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT]
+      peerA.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT]
         .appInstances[cfAddr];
     const appB =
-      peerB.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT]
+      peerB.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT]
         .appInstances[cfAddr];
 
     expect(appA.encodedState).toEqual(appState);
@@ -202,11 +202,17 @@ export class TicTacToeSimulator {
       peerB.signingKey.address!,
       UNUSED_FUNDED_ACCOUNT,
       [
-        new cf.legacy.utils.PeerBalance(peerA.signingKey.address!, ethers.utils.bigNumberify(4)),
-        new cf.legacy.utils.PeerBalance(peerB.signingKey.address!, ethers.utils.bigNumberify(0))
+        new cf.legacy.utils.PeerBalance(
+          peerA.signingKey.address!,
+          ethers.utils.bigNumberify(4)
+        ),
+        new cf.legacy.utils.PeerBalance(
+          peerB.signingKey.address!,
+          ethers.utils.bigNumberify(0)
+        )
       ],
       cfAddr
-    )
+    );
     expect(response.status).toEqual(cf.legacy.node.ResponseStatus.COMPLETED);
     // A wins so give him 2 and subtract 2 from B
     TicTacToeSimulator.validateUninstall(
@@ -226,7 +232,7 @@ export class TicTacToeSimulator {
     amountB: ethers.utils.BigNumber
   ) {
     TicTacToeSimulator.validateUninstallChannelInfo(
-      walletA.instructionExecutor.node.channelStates[UNUSED_FUNDED_ACCOUNT],
+      walletA.instructionExecutor.state.channels[UNUSED_FUNDED_ACCOUNT],
       cfAddr,
       walletA,
       amountA,
@@ -244,8 +250,12 @@ export class TicTacToeSimulator {
     amountB: ethers.utils.BigNumber
   ) {
     const app = channel.appInstances[cfAddr];
-    expect(channel.freeBalance.balanceOfAddress(walletA.signingKey.address)).toEqual(amountA);
-    expect(channel.freeBalance.balanceOfAddress(walletB.signingKey.address)).toEqual(amountB);
+    expect(
+      channel.freeBalance.balanceOfAddress(walletA.signingKey.address)
+    ).toEqual(amountA);
+    expect(
+      channel.freeBalance.balanceOfAddress(walletB.signingKey.address)
+    ).toEqual(amountB);
     expect(channel.freeBalance.uniqueId).toEqual(0);
     expect(app.dependencyNonce.nonceValue).toEqual(1);
   }

@@ -1,10 +1,10 @@
 import * as cf from "@counterfactual/cf.js";
 import { ethers } from "ethers";
 
-import { Opcode } from "../../src/opcodes";
+import { ChannelStates, StateChannelInfoImpl } from "../../src/channel-states";
 import { InstallProposer } from "../../src/middleware/state-transition/install-proposer";
 import { SetupProposer } from "../../src/middleware/state-transition/setup-proposer";
-import { Node, StateChannelInfoImpl } from "../../src/node";
+import { Opcode } from "../../src/opcodes";
 import { InternalMessage } from "../../src/types";
 
 import {
@@ -29,7 +29,7 @@ describe("State transition", () => {
     const message = new InternalMessage(
       cf.legacy.node.ActionName.SETUP,
       Opcode.STATE_TRANSITION_PROPOSE,
-      setupClientMsg(),
+      setupClientMsg()
     );
     const proposal = SetupProposer.propose(message);
     validateSetupInfos(proposal.state);
@@ -38,7 +38,7 @@ describe("State transition", () => {
     const message = new InternalMessage(
       cf.legacy.node.ActionName.INSTALL,
       Opcode.STATE_TRANSITION_PROPOSE,
-      installClientMsg(),
+      installClientMsg()
     );
     const expectedCfAddr = new cf.legacy.app.AppInstance(
       cf.legacy.network.EMPTY_NETWORK_CONTEXT,
@@ -76,7 +76,7 @@ function setupClientMsg(): cf.legacy.node.ClientActionMessage {
   };
 }
 
-function setupInstallState(): Node {
+function setupInstallState(): ChannelStates {
   const freeBalance = new cf.legacy.utils.FreeBalance(
     A_ADDRESS,
     ethers.utils.bigNumberify(20),
@@ -97,7 +97,10 @@ function setupInstallState(): Node {
   const channelStates: cf.legacy.channel.StateChannelInfos = {
     [UNUSED_FUNDED_ACCOUNT]: info
   };
-  return new Node(channelStates, cf.legacy.network.EMPTY_NETWORK_CONTEXT);
+  return new ChannelStates(
+    channelStates,
+    cf.legacy.network.EMPTY_NETWORK_CONTEXT
+  );
 }
 
 function validateSetupInfos(infos: cf.legacy.channel.StateChannelInfos) {

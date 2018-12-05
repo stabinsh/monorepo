@@ -1,7 +1,7 @@
 import * as cf from "@counterfactual/cf.js";
 
+import { ChannelStates } from "./channel-states";
 import { Context } from "./instruction-executor";
-import { Node } from "./node";
 import { Opcode } from "./opcodes";
 
 /**
@@ -20,7 +20,7 @@ export interface ContextualizedStateProposer {
   propose(
     message: InternalMessage,
     context: Context,
-    node: Node
+    node: ChannelStates
   ): StateProposal;
 }
 

@@ -1,15 +1,15 @@
 import * as cf from "@counterfactual/cf.js";
 import { ethers } from "ethers";
 
+import { ChannelStates, StateChannelInfoImpl } from "../../channel-states";
 import { Context } from "../../instruction-executor";
-import { Node, StateChannelInfoImpl } from "../../node";
 import { InternalMessage, StateProposal } from "../../types";
 
 export class InstallProposer {
   public static propose(
     message: InternalMessage,
     context: Context,
-    node: Node
+    node: ChannelStates
   ): StateProposal {
     const multisig: cf.legacy.utils.Address =
       message.clientMessage.multisigAddress;
@@ -114,7 +114,7 @@ export class InstallProposer {
   }
 
   private static proposedCfAddress(
-    node: Node,
+    node: ChannelStates,
     message: InternalMessage,
     app: cf.legacy.app.AppInterface,
     terms: cf.legacy.app.Terms,
@@ -148,10 +148,10 @@ export class InstallProposer {
   }
 
   private static nextUniqueId(
-    state: Node,
+    state: ChannelStates,
     multisig: cf.legacy.utils.Address
   ): number {
-    const channel = state.channelStates[multisig];
+    const channel = state.channels[multisig];
     // + 1 for the free balance
     return Object.keys(channel.appInstances).length + 1;
   }

@@ -2,7 +2,7 @@ import * as cf from "@counterfactual/cf.js";
 import { ethers } from "ethers";
 
 import { Context } from "../../instruction-executor";
-import { Node } from "../../node";
+import { ChannelStates } from "../../channel-states";
 import { InternalMessage } from "../../types";
 
 import { OpInstall } from "./op-install";
@@ -16,7 +16,7 @@ export class EthOpGenerator {
     message: InternalMessage,
     next: Function,
     context: Context,
-    node: Node
+    node: ChannelStates
   ): ProtocolOperation {
     const proposedState = context.intermediateResults.proposedStateTransition!;
     let op;
@@ -39,7 +39,7 @@ export class EthOpGenerator {
   public static update(
     message: InternalMessage,
     context: Context,
-    node: Node,
+    node: ChannelStates,
     proposedUpdate: any
   ): ProtocolOperation {
     const multisig: cf.legacy.utils.Address =
@@ -99,7 +99,7 @@ export class EthOpGenerator {
 
   public static setup(
     message: InternalMessage,
-    node: Node,
+    node: ChannelStates,
     proposedSetup: any
   ): ProtocolOperation {
     const multisig: cf.legacy.utils.Address =
@@ -144,7 +144,7 @@ export class EthOpGenerator {
   public static install(
     message: InternalMessage,
     context: Context,
-    node: Node,
+    node: ChannelStates,
     proposedInstall: cf.legacy.channel.StateChannelInfos,
     cfAddr: cf.legacy.utils.H256
   ) {
@@ -189,7 +189,7 @@ export class EthOpGenerator {
   public static uninstall(
     message: InternalMessage,
     context: Context,
-    node: Node,
+    node: ChannelStates,
     proposedUninstall: any
   ): ProtocolOperation {
     const multisig: cf.legacy.utils.Address =

@@ -49,7 +49,7 @@ export class ActionExecution {
               this.clientMessage
             ),
             context,
-            this.instructionExecutor.node
+            this.instructionExecutor.state
           );
           instructionPointer += 1;
           continue;

@@ -2,8 +2,8 @@ import * as cf from "@counterfactual/cf.js";
 import { ClientActionMessage } from "@counterfactual/cf.js/src/legacy/node";
 import { Signature } from "ethers/utils";
 
+import { ChannelStates } from "../channel-states";
 import { Context } from "../instruction-executor";
-import { Node } from "../node";
 import { Opcode } from "../opcodes";
 import {
   InstructionMiddlewareCallback,
@@ -37,7 +37,7 @@ export class Middleware {
     [Opcode.STATE_TRANSITION_PROPOSE]: []
   };
 
-  constructor(readonly node: Node) {}
+  constructor(readonly node: ChannelStates) {}
 
   public add(scope: Opcode, method: InstructionMiddlewareCallback) {
     this.middlewares[scope].push({ scope, method });
