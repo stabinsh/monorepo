@@ -1,5 +1,8 @@
 import * as state from "./channel-states";
-import * as instructionExecutor from "./instruction-executor";
+import {
+  InstructionExecutor,
+  InstructionExecutorConfig
+} from "./instruction-executor";
 import * as instructions from "./instructions";
 import * as middleware from "./middleware/middleware";
 import * as protocolOperations from "./middleware/protocol-operation";
@@ -10,10 +13,11 @@ import * as types from "./types";
 export {
   protocolOperations,
   protocolTypes,
+  InstructionExecutor,
+  InstructionExecutorConfig,
   instructions,
   middleware,
   mixins,
   state,
-  types,
-  instructionExecutor
+  types
 };

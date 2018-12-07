@@ -6,6 +6,7 @@ import {
 import { ethers } from "ethers";
 import EventEmitter from "eventemitter3";
 
+import ProtocolExecutor from "./protocol-executor";
 import { IMessagingService, IStoreService } from "./service-interfaces";
 
 export default class Node {
@@ -24,6 +25,7 @@ export default class Node {
   private readonly incoming: EventEmitter;
   private readonly outgoing: EventEmitter;
   private readonly signer: ethers.utils.SigningKey;
+  private readonly protocolExecutor: ProtocolExecutor;
 
   /**
    * @param privateKey
@@ -39,6 +41,9 @@ export default class Node {
     this.outgoing = new EventEmitter();
     this.registerListeners();
     this.registerConnection();
+    this.protocolExecutor = new ProtocolExecutor();
+
+    console.log(this.protocolExecutor);
   }
 
   /**
