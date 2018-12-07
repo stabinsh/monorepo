@@ -1,9 +1,4 @@
 import * as state from "./channel-states";
-import {
-  Context,
-  InstructionExecutor,
-  InstructionExecutorConfig
-} from "./instruction-executor";
 import * as instructions from "./instructions";
 import * as middleware from "./middleware/middleware";
 import * as protocolOperations from "./middleware/protocol-operation";
@@ -12,9 +7,6 @@ import * as mixins from "./mixins";
 import * as types from "./types";
 
 export {
-  Context,
-  InstructionExecutor,
-  InstructionExecutorConfig,
   instructions,
   middleware,
   mixins,
@@ -23,3 +15,10 @@ export {
   state,
   types
 };
+
+export * from "./opcodes";
+export {
+  Context,
+  InstructionExecutor,
+  InstructionExecutorConfig
+} from "./instruction-executor";

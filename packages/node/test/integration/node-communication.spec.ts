@@ -1,3 +1,4 @@
+import { legacy } from "@counterfactual/cf.js";
 import dotenv from "dotenv";
 import FirebaseServer from "firebase-server";
 
@@ -28,8 +29,18 @@ describe("Two nodes can communicate with each other", () => {
   });
 
   beforeEach(() => {
-    nodeA = new Node(A_PRIVATE_KEY, messagingService, MOCK_STORE_SERVICE);
-    nodeB = new Node(B_PRIVATE_KEY, messagingService, MOCK_STORE_SERVICE);
+    nodeA = new Node(
+      A_PRIVATE_KEY,
+      messagingService,
+      MOCK_STORE_SERVICE,
+      legacy.network.EMPTY_NETWORK_CONTEXT
+    );
+    nodeB = new Node(
+      B_PRIVATE_KEY,
+      messagingService,
+      MOCK_STORE_SERVICE,
+      legacy.network.EMPTY_NETWORK_CONTEXT
+    );
   });
 
   afterAll(() => {

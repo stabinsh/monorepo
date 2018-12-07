@@ -1,13 +1,19 @@
 import { legacy } from "@counterfactual/cf.js";
 import {
+  Context,
   InstructionExecutor,
-  InstructionExecutorConfig
+  InstructionExecutorConfig,
+  Opcode,
+  types
 } from "@counterfactual/machine";
 import { ethers } from "ethers";
 
 import { IMessagingService, IStoreService } from "../service-interfaces";
 
 import CommitmentStore from "./commitment-store";
+import IO from "./io";
+
+type ResponseConsumer = (arg: legacy.node.Response) => void;
 
 /**
  * The entry point to execute the Counterfactua protocols, as described here:
@@ -23,11 +29,12 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
   private runProtocolContinuation?: ResponseConsumer;
 
   private commitmentStore: CommitmentStore;
+  private io: IO;
 
   constructor(
     private readonly signer: ethers.utils.SigningKey,
     networkContext: legacy.network.NetworkContext,
-    private readonly messagingServer: IMessagingService,
+    private readonly messagingService: IMessagingService,
     private readonly storeService: IStoreService
   ) {
     this.instructionExecutor = new InstructionExecutor(
@@ -35,13 +42,13 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     );
     console.log(
       this.instructionExecutor,
-      this.messagingServer,
+      this.messagingService,
       this.storeService
     );
 
     this.active = false;
-
     this.commitmentStore = new CommitmentStore(this.storeService);
+    this.io = new IO(this.messagingService);
 
     if (networkContext === undefined) {
       console.warn(
@@ -55,11 +62,9 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     this.instructionExecutor = new InstructionExecutor(
       new InstructionExecutorConfig(
         this,
-        networkContext || cf.legacy.network.EMPTY_NETWORK_CONTEXT
+        networkContext || legacy.network.EMPTY_NETWORK_CONTEXT
       )
     );
-
-    this.io = new TestIOProvider(this);
 
     // TODO: Document why this is needed.
     // https://github.com/counterfactual/monorepo/issues/108
@@ -77,7 +82,11 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
 
     this.instructionExecutor.register(
       Opcode.OP_SIGN_VALIDATE,
-      async (message: InternalMessage, next: Function, context: Context) => {
+      async (
+        message: types.InternalMessage,
+        next: Function,
+        context: Context
+      ) => {
         return this.validateSignatures(message, next, context);
       }
     );
@@ -102,9 +111,9 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     fromAddress: string,
     toAddress: string,
     multisigAddress: string,
-    peerAmounts: cf.legacy.utils.PeerBalance[],
+    peerAmounts: legacy.utils.PeerBalance[],
     appId: string
-  ): Promise<cf.legacy.node.Response> {
+  ): Promise<legacy.node.Response> {
     this.active = true;
     this.instructionExecutor.runUninstallProtocol(
       fromAddress,
@@ -113,7 +122,7 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
       peerAmounts,
       appId
     );
-    return new Promise<cf.legacy.node.Response>(resolve => {
+    return new Promise<legacy.node.Response>(resolve => {
       this.runProtocolContinuation = resolve;
     });
   }
@@ -124,10 +133,10 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     multisigAddress: string,
     appId: string,
     encodedAppState: string,
-    appStateHash: cf.legacy.utils.H256
-  ): Promise<cf.legacy.node.Response> {
+    appStateHash: legacy.utils.H256
+  ): Promise<legacy.node.Response> {
     this.active = true;
-    const promise = new Promise<cf.legacy.node.Response>((resolve, reject) => {
+    const promise = new Promise<legacy.node.Response>((resolve, reject) => {
       this.runProtocolContinuation = resolve;
     });
     this.instructionExecutor.runUpdateProtocol(
@@ -145,9 +154,9 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     fromAddress: string,
     toAddress: string,
     multisigAddress: string
-  ): Promise<cf.legacy.node.Response> {
+  ): Promise<legacy.node.Response> {
     this.active = true;
-    const promise = new Promise<cf.legacy.node.Response>((resolve, reject) => {
+    const promise = new Promise<legacy.node.Response>((resolve, reject) => {
       this.runProtocolContinuation = resolve;
     });
     this.instructionExecutor.runSetupProtocol(
@@ -163,9 +172,9 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     toAddress: string,
     intermediary: string,
     multisigAddress: string
-  ): Promise<cf.legacy.node.Response> {
+  ): Promise<legacy.node.Response> {
     this.active = true;
-    const promise = new Promise<cf.legacy.node.Response>((resolve, reject) => {
+    const promise = new Promise<legacy.node.Response>((resolve, reject) => {
       this.runProtocolContinuation = resolve;
     });
     this.instructionExecutor.runInstallMetachannelAppProtocol(
@@ -181,10 +190,10 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
     fromAddress: string,
     toAddress: string,
     multisigAddress: string,
-    installData: cf.legacy.app.InstallData
-  ): Promise<cf.legacy.node.Response> {
+    installData: legacy.app.InstallData
+  ): Promise<legacy.node.Response> {
     this.active = true;
-    const promise = new Promise<cf.legacy.node.Response>((resolve, reject) => {
+    const promise = new Promise<legacy.node.Response>((resolve, reject) => {
       this.runProtocolContinuation = resolve;
     });
     this.instructionExecutor.runInstallProtocol(
@@ -199,7 +208,7 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
   /**
    * Resolves the registered promise so the test can continue.
    */
-  public sendResponse(res: cf.legacy.node.Response) {
+  public sendResponse(res: legacy.node.Response) {
     this.active = false;
     if (this.runProtocolContinuation) {
       this.runProtocolContinuation(res);
@@ -210,7 +219,7 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
   /**
    * Called When a peer wants to send an io messge to this wallet.
    */
-  public receiveMessageFromPeer(incoming: cf.legacy.node.ClientActionMessage) {
+  public receiveMessageFromPeer(incoming: legacy.node.ClientActionMessage) {
     this.io.receiveMessageFromPeer(incoming);
   }
 
@@ -222,7 +231,7 @@ export default class ProtocolExecutor implements legacy.node.ResponseSink {
   }
 
   private validateSignatures(
-    message: InternalMessage,
+    message: types.InternalMessage,
     next: Function,
     context: Context
   ) {

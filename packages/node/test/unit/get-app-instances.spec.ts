@@ -1,3 +1,4 @@
+import { legacy } from "@counterfactual/cf.js";
 import {
   AppInstanceInfo,
   Node as NodeTypes
@@ -15,7 +16,8 @@ describe("Node method follows spec - getAppInstances", () => {
     const node = new Node(
       A_PRIVATE_KEY,
       MOCK_MESSAGING_SERVICE,
-      MOCK_STORE_SERVICE
+      MOCK_STORE_SERVICE,
+      legacy.network.EMPTY_NETWORK_CONTEXT
     );
     const requestId = "1";
     const req: NodeTypes.MethodRequest = {

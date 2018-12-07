@@ -1,3 +1,4 @@
+import { legacy } from "@counterfactual/cf.js";
 import dotenv from "dotenv";
 import FirebaseServer from "firebase-server";
 
@@ -24,7 +25,12 @@ describe("Node can use storage service", () => {
     storeService = firebaseServiceFactory.createStoreService(
       process.env.FIREBASE_STORE_SERVER_KEY!
     );
-    node = new Node(A_PRIVATE_KEY, MOCK_MESSAGING_SERVICE, storeService);
+    node = new Node(
+      A_PRIVATE_KEY,
+      MOCK_MESSAGING_SERVICE,
+      storeService,
+      legacy.network.EMPTY_NETWORK_CONTEXT
+    );
   });
 
   afterAll(() => {

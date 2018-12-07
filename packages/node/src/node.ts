@@ -7,7 +7,7 @@ import {
 import { ethers } from "ethers";
 import EventEmitter from "eventemitter3";
 
-import ProtocolExecutor from "./protocol-executor";
+import ProtocolExecutor from "./machine/protocol-executor";
 import { IMessagingService, IStoreService } from "./service-interfaces";
 
 export default class Node {
@@ -43,7 +43,12 @@ export default class Node {
     this.outgoing = new EventEmitter();
     this.registerListeners();
     this.registerConnection();
-    this.protocolExecutor = new ProtocolExecutor(networkContext);
+    this.protocolExecutor = new ProtocolExecutor(
+      this.signer,
+      this.networkContext,
+      this.messagingService,
+      this.storeService
+    );
 
     console.log(this.protocolExecutor);
   }
