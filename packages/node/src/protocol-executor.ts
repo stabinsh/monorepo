@@ -7,9 +7,9 @@ import {
 export default class ProtocolExecutor implements legacy.node.ResponseSink {
   private readonly instructionExecutor: InstructionExecutor;
 
-  constructor() {
+  constructor(networkContext: legacy.network.NetworkContext) {
     this.instructionExecutor = new InstructionExecutor(
-      new InstructionExecutorConfig(this, legacy.network.EMPTY_NETWORK_CONTEXT)
+      new InstructionExecutorConfig(this, networkContext)
     );
     console.log(this.instructionExecutor);
   }

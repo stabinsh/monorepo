@@ -1,3 +1,4 @@
+import { legacy } from "@counterfactual/cf.js";
 import {
   Address,
   AppInstanceInfo,
@@ -34,14 +35,15 @@ export default class Node {
   constructor(
     privateKey: string,
     private readonly messagingService: IMessagingService,
-    private readonly storeService: IStoreService
+    private readonly storeService: IStoreService,
+    private readonly networkContext: legacy.network.NetworkContext
   ) {
     this.signer = new ethers.utils.SigningKey(privateKey);
     this.incoming = new EventEmitter();
     this.outgoing = new EventEmitter();
     this.registerListeners();
     this.registerConnection();
-    this.protocolExecutor = new ProtocolExecutor();
+    this.protocolExecutor = new ProtocolExecutor(networkContext);
 
     console.log(this.protocolExecutor);
   }
