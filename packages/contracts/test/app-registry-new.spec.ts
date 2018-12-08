@@ -1,32 +1,30 @@
-import { expect } from "chai";
+import * as waffle from "ethereum-waffle";
 import { ethers } from "ethers";
+
+import AppRegistry from "../build/AppRegistry.json";
+import LibStaticCall from "../build/LibStaticCall.json";
+import Transfer from "../build/Transfer.json";
 
 import { AppInstance, AppInterface, AssetType, Terms } from "../src/index";
 
 import { ALICE, BOB } from "./constants";
+import { expect } from "./utils";
 
-const provider = new ethers.providers.Web3Provider(
-  (global as any).web3.currentProvider
-);
+describe("AppRegistry - Counterparty is Unresponsive", () => {
+  let provider: ethers.providers.Web3Provider;
+  let wallet: ethers.Wallet;
 
-contract("AppRegistry - Counterparty is Unresponsive", (accounts: string[]) => {
-  let unlockedAccount: ethers.providers.JsonRpcSigner;
   let appRegistry: ethers.Contract;
 
   before(async () => {
-    unlockedAccount = await provider.getSigner(accounts[0]);
+    provider = waffle.createMockProvider();
+    wallet = (await waffle.getWallets(provider))[0];
 
-    const artifact = artifacts.require("AppRegistry");
-    artifact.link(artifacts.require("LibStaticCall"));
-    artifact.link(artifacts.require("Transfer"));
+    const libStaticCall = await waffle.deployContract(wallet, LibStaticCall);
 
-    appRegistry = await await new ethers.ContractFactory(
-      artifact.abi,
-      artifact.binary,
-      unlockedAccount
-    ).deploy({ gasLimit: 6e9 });
+    waffle.link(AppRegistry, "LibStaticCall", libStaticCall.address);
 
-    await appRegistry.deployed();
+    appRegistry = await waffle.deployContract(wallet, AppRegistry);
   });
 
   it("is possible to call setState to put state on-chain", async () => {
@@ -44,7 +42,7 @@ contract("AppRegistry - Counterparty is Unresponsive", (accounts: string[]) => {
 
     // Setup AppInstance
     const appInstance = new AppInstance(
-      accounts[0],
+      wallet.address,
       [ALICE.address, BOB.address],
       appInterface,
       terms,

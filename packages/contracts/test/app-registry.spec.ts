@@ -1,4 +1,9 @@
+import * as waffle from "ethereum-waffle";
 import { ethers } from "ethers";
+
+import AppRegistry from "../build/AppRegistry.json";
+import LibStaticCall from "../build/LibStaticCall.json";
+import Transfer from "../build/Transfer.json";
 
 import {
   AppInstance,
@@ -11,12 +16,16 @@ import {
 import { ALICE, BOB } from "./constants";
 import { expect } from "./utils";
 
+const { hexlify, randomBytes } = ethers.utils;
+const { AddressZero, HashZero } = ethers.constants;
+
 // HELPER DATA
 const TIMEOUT = 30;
 
-contract("AppRegistry", (accounts: string[]) => {
+describe("AppRegistry", () => {
   let provider: ethers.providers.Web3Provider;
-  let wallet: ethers.providers.JsonRpcSigner;
+  let wallet: ethers.Wallet;
+
   let appRegistry: ethers.Contract;
 
   let setStateAsOwner: (nonce: number, appState?: string) => Promise<void>;
@@ -31,37 +40,30 @@ contract("AppRegistry", (accounts: string[]) => {
   let isStateFinalized: () => Promise<boolean>;
 
   before(async () => {
-    provider = new ethers.providers.Web3Provider(
-      (global as any).web3.currentProvider
-    );
+    provider = waffle.createMockProvider();
+    wallet = (await waffle.getWallets(provider))[0];
 
-    wallet = await provider.getSigner(accounts[0]);
+    const libStaticCall = await waffle.deployContract(wallet, LibStaticCall);
+    const transfer = await waffle.deployContract(wallet, Transfer);
 
-    const artifact = artifacts.require("AppRegistry");
-    artifact.link(artifacts.require("LibStaticCall"));
-    artifact.link(artifacts.require("Transfer"));
+    waffle.link(AppRegistry, "Transfer", transfer.address);
+    waffle.link(AppRegistry, "LibStaticCall", libStaticCall.address);
 
-    appRegistry = await new ethers.ContractFactory(
-      artifact.abi,
-      artifact.binary,
-      wallet
-    ).deploy({ gasLimit: 6e9 });
-
-    await appRegistry.deployed();
+    appRegistry = await waffle.deployContract(wallet, AppRegistry);
   });
 
   beforeEach(async () => {
     const appInstance = new AppInstance(
-      accounts[0],
+      wallet.address,
       [ALICE.address, BOB.address],
       new AppInterface(
-        ethers.utils.hexlify(ethers.utils.randomBytes(20)),
-        ethers.utils.hexlify(ethers.utils.randomBytes(4)),
-        ethers.utils.hexlify(ethers.utils.randomBytes(4)),
-        ethers.utils.hexlify(ethers.utils.randomBytes(4)),
-        ethers.utils.hexlify(ethers.utils.randomBytes(4))
+        hexlify(randomBytes(20)),
+        hexlify(randomBytes(4)),
+        hexlify(randomBytes(4)),
+        hexlify(randomBytes(4)),
+        hexlify(randomBytes(4))
       ),
-      new Terms(AssetType.ETH, 0, ethers.constants.AddressZero),
+      new Terms(AssetType.ETH, 0, AddressZero),
       10
     );
 
@@ -78,29 +80,21 @@ contract("AppRegistry", (accounts: string[]) => {
     setStateAsOwner = (nonce: number, appState?: string) =>
       appRegistry.functions.setState(appInstance.appIdentity, {
         nonce,
-        stateHash: appState || ethers.constants.HashZero,
+        stateHash: appState || HashZero,
         timeout: TIMEOUT,
-        signatures: ethers.constants.HashZero
+        signatures: HashZero
       });
 
     cancelChallenge = () =>
-      appRegistry.functions.cancelChallenge(
-        appInstance.appIdentity,
-        ethers.constants.HashZero
-      );
+      appRegistry.functions.cancelChallenge(appInstance.appIdentity, HashZero);
 
     setStateWithSignatures = async (nonce: number, appState?: string) =>
       appRegistry.functions.setState(appInstance.appIdentity, {
         nonce,
-        stateHash: appState || ethers.constants.HashZero,
+        stateHash: appState || HashZero,
         timeout: TIMEOUT,
         signatures: await wallet.signMessage(
-          computeStateHash(
-            appInstance.id,
-            appState || ethers.constants.HashZero,
-            nonce,
-            TIMEOUT
-          )
+          computeStateHash(appInstance.id, appState || HashZero, nonce, TIMEOUT)
         )
       });
 
@@ -226,5 +220,49 @@ contract("AppRegistry", (accounts: string[]) => {
       // @ts-ignore
       await expect(setStateWithSignatures(0)).to.be.reverted;
     });
+  });
+
+  it("is possible to call setState to put state on-chain", async () => {
+    // Test AppInterface
+    const appInterface = new AppInterface(
+      AddressZero,
+      hexlify(randomBytes(4)),
+      hexlify(randomBytes(4)),
+      hexlify(randomBytes(4)),
+      hexlify(randomBytes(4))
+    );
+
+    // Test Terms
+    const terms = new Terms(AssetType.ETH, 0, AddressZero);
+
+    // Setup AppInstance
+    const appInstance = new AppInstance(
+      wallet.address,
+      [ALICE.address, BOB.address],
+      appInterface,
+      terms,
+      10
+    );
+
+    // Tell the AppRegistry to start timer
+    await appRegistry.functions.setState(appInstance.appIdentity, {
+      stateHash: hexlify(randomBytes(32)),
+      nonce: 1,
+      timeout: 10,
+      signatures: HashZero
+    });
+
+    // Verify the correct data was put on-chain
+    const {
+      status,
+      latestSubmitter,
+      appStateHash,
+      disputeCounter,
+      disputeNonce,
+      finalizesAt,
+      nonce
+    } = await appRegistry.functions.appStates(appInstance.id);
+
+    expect(status).to.be.eq(1);
   });
 });

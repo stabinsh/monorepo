@@ -1,46 +1,38 @@
+import * as waffle from "ethereum-waffle";
 import { ethers } from "ethers";
+
+import ConditionalTransaction from "../build/ConditionalTransaction.json";
+import DelegateProxy from "../build/DelegateProxy.json";
+import ExampleCondition from "../build/ExampleCondition.json";
+import LibStaticCall from "../build/LibStaticCall.json";
+import Transfer from "../build/Transfer.json";
 
 import { expect } from "./utils";
 
-const provider = new ethers.providers.Web3Provider(
-  (global as any).web3.currentProvider
-);
-
-contract("ConditionalTransaction", (accounts: string[]) => {
-  let unlockedAccount: ethers.providers.JsonRpcSigner;
+describe("ConditionalTransaction", () => {
+  let provider: ethers.providers.Web3Provider;
+  let wallet: ethers.Wallet;
 
   let exampleCondition: ethers.Contract;
   let delegateProxy: ethers.Contract;
   let conditionalTransaction: ethers.Contract;
 
   before(async () => {
-    unlockedAccount = await provider.getSigner(accounts[0]);
+    provider = waffle.createMockProvider();
+    wallet = (await waffle.getWallets(provider))[0];
 
-    exampleCondition = await new ethers.ContractFactory(
-      artifacts.require("ExampleCondition").abi,
-      artifacts.require("ExampleCondition").bytecode,
-      unlockedAccount
-    ).deploy({ gasLimit: 6e9 });
+    const transfer = await waffle.deployContract(wallet, Transfer);
+    const libStaticCall = await waffle.deployContract(wallet, LibStaticCall);
 
-    delegateProxy = await new ethers.ContractFactory(
-      artifacts.require("DelegateProxy").abi,
-      artifacts.require("DelegateProxy").bytecode,
-      unlockedAccount
-    ).deploy({ gasLimit: 6e9 });
+    waffle.link(ConditionalTransaction, "Transfer", transfer.address);
+    waffle.link(ConditionalTransaction, "LibStaticCall", libStaticCall.address);
 
-    // Contract is already deployed when using Truffle Tests (re-uses migrations)
-    const artifact = artifacts.require("ConditionalTransaction");
-    artifact.link(artifacts.require("Transfer"));
-    artifact.link(artifacts.require("LibStaticCall"));
-    conditionalTransaction = await new ethers.ContractFactory(
-      artifact.abi,
-      artifact.binary,
-      unlockedAccount
-    ).deploy({ gasLimit: 6e9 });
-
-    await exampleCondition.deployed();
-    await delegateProxy.deployed();
-    await conditionalTransaction.deployed();
+    conditionalTransaction = await waffle.deployContract(
+      wallet,
+      ConditionalTransaction
+    );
+    exampleCondition = await waffle.deployContract(wallet, ExampleCondition);
+    delegateProxy = await waffle.deployContract(wallet, DelegateProxy);
   });
 
   describe("Pre-commit to transfer details", () => {
@@ -77,7 +69,7 @@ contract("ConditionalTransaction", (accounts: string[]) => {
     );
 
     beforeEach(async () => {
-      await unlockedAccount.sendTransaction({
+      await wallet.sendTransaction({
         to: delegateProxy.address,
         value: ethers.constants.WeiPerEther
       });

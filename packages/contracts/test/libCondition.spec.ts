@@ -1,41 +1,30 @@
+import * as waffle from "ethereum-waffle";
 import { ethers } from "ethers";
+
+import ExampleCondition from "../build/ExampleCondition.json";
+import LibCondition from "../build/LibCondition.json";
+import LibStaticCall from "../build/LibStaticCall.json";
 
 import { expect } from "./utils";
 
 const { keccak256, defaultAbiCoder, solidityKeccak256 } = ethers.utils;
 
-const provider = new ethers.providers.Web3Provider(
-  (global as any).web3.currentProvider
-);
-
-contract("LibCondition", (accounts: string[]) => {
-  let unlockedAccount: ethers.providers.JsonRpcSigner;
+describe("LibCondition", () => {
+  let provider: ethers.providers.Web3Provider;
+  let wallet: ethers.Wallet;
 
   let exampleCondition: ethers.Contract;
   let libCondition: ethers.Contract;
 
   before(async () => {
-    unlockedAccount = await provider.getSigner(accounts[0]);
+    provider = waffle.createMockProvider();
+    wallet = (await waffle.getWallets(provider))[0];
 
-    const libConditionArtifact = artifacts.require("LibCondition");
-    const exampleConditionArtifact = artifacts.require("ExampleCondition");
+    const libStaticCall = await waffle.deployContract(wallet, LibStaticCall);
+    waffle.link(LibCondition, "LibStaticCall", libStaticCall.address);
 
-    libConditionArtifact.link(artifacts.require("LibStaticCall"));
-
-    exampleCondition = await new ethers.ContractFactory(
-      exampleConditionArtifact.abi,
-      exampleConditionArtifact.bytecode,
-      unlockedAccount
-    ).deploy({ gasLimit: 6e9 });
-
-    libCondition = await new ethers.ContractFactory(
-      libConditionArtifact.abi,
-      libConditionArtifact.binary,
-      unlockedAccount
-    ).deploy({ gasLimit: 6e9 });
-
-    await exampleCondition.deployed();
-    await libCondition.deployed();
+    libCondition = await waffle.deployContract(wallet, LibCondition);
+    exampleCondition = await waffle.deployContract(wallet, ExampleCondition);
   });
 
   describe("asserts conditions with no params", () => {
