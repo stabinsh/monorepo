@@ -49,6 +49,7 @@ contract("Virtual App", (accounts: string[]) => {
 
       const tx = virtualAppAgreement.interface.functions.delegateTarget.encode([
         {
+          beneficiaries,
           registryAddr: registry.address,
           terms: {
             assetType: 0,
@@ -57,8 +58,7 @@ contract("Virtual App", (accounts: string[]) => {
           },
           expiry: 0,
           target: fixedResolutionApp.cfAddress,
-          capitalProvided: ethers.utils.parseEther("10"),
-          beneficiaries: beneficiaries
+          capitalProvided: ethers.utils.parseEther("10")
         }
       ]);
 
@@ -77,10 +77,10 @@ contract("Virtual App", (accounts: string[]) => {
 
       expect(
         (await unlockedAccount.provider.getBalance(beneficiaries[0])).toString()
-      ).to.eq((ethers.utils.parseEther("5").toString()));
+      ).to.eq(ethers.utils.parseEther("5").toString());
       expect(
         (await unlockedAccount.provider.getBalance(beneficiaries[1])).toString()
-        ).to.eq((ethers.utils.parseEther("5").toString()));
+      ).to.eq(ethers.utils.parseEther("5").toString());
     });
   });
 });
